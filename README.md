@@ -13,7 +13,12 @@ Python script to automatically remove patient information from all sorts of raw 
     conda install -c conda-forge pandas cryptography tqdm pydicom
     ```
 
-5. Optional: test if your installation is working by running the following command:
+4. Got the the location of this folder, for example (replace with your own path):
+    ```
+    cd /home/user/Downloads/raw_ecg_encrypter
+    ```
+
+5. Optional: test if your installation is working by running the following two commands:
     ```
     pytest
     ```
@@ -27,7 +32,6 @@ Python script to automatically remove patient information from all sorts of raw 
 7. Create a CSV file, semicolon-delimited, with in one column named `PID` the patient IDs as used in the XML/DCM file and in one column named `PseudoID` the PseudoIDs (please see example files and folders in the repository).
 
 8. Run the encrypter with the following command in the terminal or Anaconda Prompt (don't forget to replace `in_test_dir`, `out_test_dir`, `excrypt_test_dir` and `test_key.csv` with the correct full paths, like `C:\Users\Test\in_test_dir` etc). Please enter the correct manufacturerer too.
-
     ```
     python ecg_encrypter.py --in_folder in_test_dir_xml --out_folder out_test_dir --encrypted_folder encrypt_test_dir --key test_key.csv --manufacturer MUSE
     python ecg_encrypter.py --in_folder in_test_dir_dcm --out_folder out_test_dir --encrypted_folder encrypt_test_dir --key test_key.csv --manufacturer DICOM
@@ -37,4 +41,4 @@ Python script to automatically remove patient information from all sorts of raw 
 
 10. IMPORTANT: the script generates a password in the `in_folder`, when it does not exist yet. Make sure to save this password somewhere, otherwise decryption won't be possible.
 
-11. Upload the encrypted files to SurfDrive, share the password file (in the in_folder) via another channel (such as email).
+11. Upload the encrypted files to SurfDrive or send via Surffilesender, share the password file (in the in_folder) via another channel (such as email).
