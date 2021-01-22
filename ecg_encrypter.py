@@ -37,20 +37,11 @@ def encrypt(filename_input, filename_output, key):
     with open(filename_output, "wb") as file:
         file.write(encrypted_data)
 
-if __name__ == "__main__":
-    # Parser
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--in_folder', type=str, default="test_dir", help="Path to folder with xml or dicom waveform files")
-    parser.add_argument('--out_folder', type=str, default="out_test_dir", help="Folder name to put converted files in")
-    parser.add_argument('--encrypted_folder', type=str, default="encrypt_test_dir", help="Folder name to put encrypted files in")
-    parser.add_argument('--key', type=str, default="key.csv", help="CSV file with local PIDs (named 'PID') and pseudonyms (named 'PseudoID')")
-    parser.add_argument('--manufacturer', type=str, default="MUSE", help="Enter manufacturer, options: MUSE or MORTARA or DICOM or DICOMDIR")
+def run(config):
+    """
+    Main loop for pseudonymizing and encrypting all the files.
+    """    
     
-    config = parser.parse_args()
-
-    assert(config.manufacturer in ['MUSE', 'MORTARA', 'DICOM', 'DICOMDIR'])
-
     dir_list = []
     
     print('Reading folder...')
@@ -114,6 +105,9 @@ if __name__ == "__main__":
             
             # Remove PatientDemograpics block
             xml_root.remove(xml_root[1])
+            
+            if xml_root.find('TestDemographics/SecondaryID') is not None:
+                xml_root.find('TestDemographics').remove(xml_root.find('TestDemographics/SecondaryID'))
 
         elif config.manufacturer == 'MORTARA':
             xml_tree = ET.parse(path)
@@ -151,7 +145,7 @@ if __name__ == "__main__":
             continue
         
         timestamp_hash = hashlib.sha256(timestamp.encode('utf-8')).hexdigest()[-10:]
-        file_out = pseudo_id + '_' + timestamp_hash
+        file_out = str(pseudo_id) + '_' + timestamp_hash
 
         # Save pseudonimized and encrypted files
         if config.manufacturer in ['MUSE', 'MORTARA']:
@@ -164,3 +158,19 @@ if __name__ == "__main__":
             os.path.join(config.encrypted_folder, file_out + '.enc'), password)
     
     print(f'Done, processed {str(idx+1)} files!')
+
+    return idx+1
+
+if __name__ == "__main__":
+    # Parser
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--in_folder', type=str, default="test_dir", help="Path to folder with xml or dicom waveform files")
+    parser.add_argument('--out_folder', type=str, default="out_test_dir", help="Folder name to put converted files in")
+    parser.add_argument('--encrypted_folder', type=str, default="encrypt_test_dir", help="Folder name to put encrypted files in")
+    parser.add_argument('--key', type=str, default="key.csv", help="CSV file with local PIDs (named 'PID') and pseudonyms (named 'PseudoID')")
+    parser.add_argument('--manufacturer', type=str, default="MUSE", help="Enter manufacturer, options: MUSE or MORTARA or DICOM or DICOMDIR")
+    
+    config = parser.parse_args()
+
+    assert(config.manufacturer in ['MUSE', 'MORTARA', 'DICOM', 'DICOMDIR'])
