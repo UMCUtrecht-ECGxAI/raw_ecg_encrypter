@@ -94,7 +94,6 @@ def run(config):
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
     keys = pd.read_csv(config.key, sep=None, engine='python')
-    keys['PID'] = keys['PID'].astype(str)
 
     if not os.path.exists(os.path.join(config.in_folder, 'password.key')):
         print('Generating new password...')
@@ -113,7 +112,7 @@ def run(config):
 
             # Get required variables from XML file
             xml_dict = make_dict_from_tree(xml_root)['RestingECG']
-            patient_id = str(xml_dict['PatientDemographics']['PatientID'])
+            patient_id = int(xml_dict['PatientDemographics']['PatientID'])
             acq_date = xml_dict['TestDemographics']['AcquisitionDate']
             acq_time = xml_dict['TestDemographics']['AcquisitionTime']
             timestamp = acq_date + acq_time
