@@ -174,3 +174,5 @@ if __name__ == "__main__":
     config = parser.parse_args()
 
     assert(config.manufacturer in ['MUSE', 'MORTARA', 'DICOM', 'DICOMDIR'])
+
+    run(config)
