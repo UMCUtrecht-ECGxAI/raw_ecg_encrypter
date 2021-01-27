@@ -37,6 +37,20 @@ def encrypt(filename_input, filename_output, key):
     with open(filename_output, "wb") as file:
         file.write(encrypted_data)
 
+def remove_specific_xml_field(xml_root, field_path):
+    """
+    Removes XML field at the specified path in the XML. Works for top-level and
+    nested fields.
+    """
+    if xml_root.find(field_path) is not None:
+        if len(field_path.split('/')) > 1:
+            root_path = field_path.split('/')[0]
+            xml_root.find(root_path).remove(xml_root.find(field_path))
+        else:
+            xml_root.remove(xml_root.find(field_path))
+
+    return xml_root
+
 def run(config):
     """
     Main loop for pseudonymizing and encrypting all the files.
@@ -80,6 +94,7 @@ def run(config):
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
     keys = pd.read_csv(config.key, sep=None, engine='python')
+    keys['PID'] = keys['PID'].astype(str)
 
     if not os.path.exists(os.path.join(config.in_folder, 'password.key')):
         print('Generating new password...')
@@ -98,16 +113,24 @@ def run(config):
 
             # Get required variables from XML file
             xml_dict = make_dict_from_tree(xml_root)['RestingECG']
-            patient_id = int(xml_dict['PatientDemographics']['PatientID'])
+            patient_id = str(xml_dict['PatientDemographics']['PatientID'])
             acq_date = xml_dict['TestDemographics']['AcquisitionDate']
             acq_time = xml_dict['TestDemographics']['AcquisitionTime']
             timestamp = acq_date + acq_time
-            
-            # Remove PatientDemograpics block
-            xml_root.remove(xml_root[1])
-            
-            if xml_root.find('TestDemographics/SecondaryID') is not None:
-                xml_root.find('TestDemographics').remove(xml_root.find('TestDemographics/SecondaryID'))
+
+            # Remove specific fields
+            remove_field = ['PatientDemographics', 'Order', 
+                'TestDemographics/OverreaderID', 
+                'TestDemographics/EditorID', 
+                'TestDemographics/OverreaderLastName', 
+                'TestDemographics/OverreaderFirstName', 
+                'TestDemographics/EditorLastName', 
+                'TestDemographics/EditorFirstName', 
+                'TestDemographics/SecondaryID'
+            ]
+
+            for field_path in remove_field:
+                xml_root = remove_specific_xml_field(xml_root, field_path)
 
         elif config.manufacturer == 'MORTARA':
             xml_tree = ET.parse(path)
