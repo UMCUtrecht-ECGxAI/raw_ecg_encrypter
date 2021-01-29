@@ -94,6 +94,8 @@ def run(config):
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
     keys = pd.read_csv(config.key, sep=None, engine='python')
+    keys['PID'] = keys['PID'].astype(str)
+    keys['PseudoID'] = keys['PseudoID'].astype(str)
 
     if not os.path.exists(os.path.join(config.in_folder, 'password.key')):
         print('Generating new password...')
@@ -112,7 +114,7 @@ def run(config):
 
             # Get required variables from XML file
             xml_dict = make_dict_from_tree(xml_root)['RestingECG']
-            patient_id = xml_dict['PatientDemographics']['PatientID']
+            patient_id = str(xml_dict['PatientDemographics']['PatientID'])
             acq_date = xml_dict['TestDemographics']['AcquisitionDate']
             acq_time = xml_dict['TestDemographics']['AcquisitionTime']
             timestamp = acq_date + acq_time
@@ -136,7 +138,7 @@ def run(config):
             xml_root = xml_tree.getroot()
 
             # Get required variables from XML file
-            patient_id = xml_root.find('./SUBJECT').attrib['ID']
+            patient_id = str(xml_root.find('./SUBJECT').attrib['ID'])
             timestamp = xml_root.find('.').attrib['ACQUISITION_TIME_XML']
 
             # Remove specific fields
@@ -153,7 +155,7 @@ def run(config):
             ds = dicom.read_file(path)
 
             # Get required variables from DICOM file
-            patient_id = int(ds.PatientID)
+            patient_id = str(ds.PatientID)
             try:
                 timestamp = ds.StudyDate + ds.StudyTime
             except Exception as e:

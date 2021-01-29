@@ -34,9 +34,9 @@ def make_dict_from_tree(element_tree):
         if tree is None:
             return accum
  
-        if tree.getchildren():
+        if tree:
             accum[tree.tag] = {}
-            for each in tree.getchildren():
+            for each in tree:
                 result = internal_iter(each, {})
                 if each.tag in accum[tree.tag]:
                     if not isinstance(accum[tree.tag][each.tag], list):
