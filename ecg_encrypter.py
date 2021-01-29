@@ -48,7 +48,7 @@ def remove_specific_xml_field(xml_root, field_path):
             xml_root.find(root_path).remove(xml_root.find(field_path))
         else:
             xml_root.remove(xml_root.find(field_path))
-
+            
     return xml_root
 
 def run(config):
@@ -112,7 +112,7 @@ def run(config):
 
             # Get required variables from XML file
             xml_dict = make_dict_from_tree(xml_root)['RestingECG']
-            patient_id = int(xml_dict['PatientDemographics']['PatientID'])
+            patient_id = xml_dict['PatientDemographics']['PatientID']
             acq_date = xml_dict['TestDemographics']['AcquisitionDate']
             acq_time = xml_dict['TestDemographics']['AcquisitionTime']
             timestamp = acq_date + acq_time
@@ -139,8 +139,15 @@ def run(config):
             patient_id = xml_root.find('./SUBJECT').attrib['ID']
             timestamp = xml_root.find('.').attrib['ACQUISITION_TIME_XML']
 
-            # Remove PatientDemograpics block
-            xml_root.remove(xml_root[2])
+            # Remove specific fields
+            remove_field = [
+                'DEMOGRAPHIC_FIELDS',
+                'SUBJECT',
+                'SITE'
+            ]
+
+            for field_path in remove_field:
+                xml_root = remove_specific_xml_field(xml_root, field_path)
 
         elif config.manufacturer == 'DICOM' or config.manufacturer == 'DICOMDIR':
             ds = dicom.read_file(path)
