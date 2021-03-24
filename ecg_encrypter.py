@@ -94,9 +94,9 @@ def run(config):
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
     keys = pd.read_csv(config.key, sep=None, engine='python')
-    if keys['PID'].dtypes == int:
+    if keys['PID'].dtypes == int or keys['PID'].dtypes == float:
         print('Adding leading zeros to numeric PatientID, is that correct?')
-        keys['PID'] = keys['PID'].apply('{:0>7}'.format).astype(str)
+        keys['PID'] = keys['PID'].astype(int).astype(str).apply('{:0>7}'.format)
     else:
         keys['PID'] = keys['PID'].astype(str)
     keys['PseudoID'] = keys['PseudoID'].astype(str)
@@ -177,6 +177,8 @@ def run(config):
             pseudo_id = keys.loc[keys['PID'] == patient_id, 'PseudoID'].values[0]
         else:
             print(f'The XML/DCM file with name {path} has no associated RedCap ID, please check.')
+            print(patient_id)
+            print(keys['PID'])
             continue
         
         timestamp_hash = hashlib.sha256(timestamp.encode('utf-8')).hexdigest()[-10:]
