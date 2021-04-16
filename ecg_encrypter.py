@@ -93,7 +93,7 @@ def run(config):
 
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
-    keys = pd.read_csv(config.key, sep=None, engine='python')
+    keys = pd.read_csv(config.key, sep=None, engine='python', encoding='utf-8-sig')
     if keys['PID'].dtypes == int:
         print('Adding leading zeros to numeric PatientID, is that correct?')
         keys['PID'] = keys['PID'].apply('{:0>7}'.format).astype(str)
