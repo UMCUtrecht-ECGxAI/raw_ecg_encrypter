@@ -94,11 +94,11 @@ def run(config):
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
     keys = pd.read_csv(config.key, sep=None, engine='python', encoding='utf-8-sig')
-    if keys['PID'].dtypes == int or keys['PID'].dtypes == float:
-        print('Adding leading zeros to numeric PatientID, is that correct?')
-        keys['PID'] = keys['PID'].astype(int).astype(str).apply('{:0>7}'.format)
-    else:
-        keys['PID'] = keys['PID'].astype(str)
+    if not keys['PID'].dtypes == str:
+        patient_id_length = keys['PID'].astype(str).map(len).max()
+        reformat_string = '{:0>' + str(patient_id_length) + '}'
+        print(f'Adding leading zeros to numeric PatientID of length {str(patient_id_length)}, is that correct?')
+        keys['PID'] = keys['PID'].astype(int).astype(str).apply(reformat_string.format)
     keys['PseudoID'] = keys['PseudoID'].astype(str)
 
     if not os.path.exists(os.path.join(config.in_folder, 'password.key')):
