@@ -111,7 +111,8 @@ def run(config):
             keys['PID'] = keys['PID'].astype(int).astype(
                 str).apply(reformat_string.format)
         elif leading_zeros == "n":
-            pass
+            keys['PID'] = keys['PID'].astype(int).astype(
+                str)
         else:
             raise AssertionError("Please respond with Y or n...")
     keys['PseudoID'] = keys['PseudoID'].astype(str)
