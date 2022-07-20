@@ -1,4 +1,4 @@
-# Manual for the ecg_encrypter
+# ECG pseudonymizer and encrypter
 Python script to automatically remove patient information from all sorts of raw ECG files. It automatically replaces the patient ID in the files with a pseudonymized ID that you provide, and deletes all other sensitive information. In a second step the ECGs are encrypted using AES128 encryption in CBC mode with a SHA256 HMAC message authentication code. These files can be safely shared between centers.
 
 1. Install Anaconda/Miniconda on your system.
