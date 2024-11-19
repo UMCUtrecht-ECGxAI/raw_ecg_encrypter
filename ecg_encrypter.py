@@ -93,39 +93,45 @@ def run(config):
                     dir_list.append(os.path.join(root, file))
                 elif (file.startswith('1.2.840.113654.2.70.1') or
                       file.endswith('.dcm') or file.endswith('.DCM')):
-                    ds = dicom.read_file(os.path.join(root, file))
+                    ds = dicom.dcmread(os.path.join(root, file))
                     if ds.SOPClassUID == '1.2.840.10008.5.1.4.1.1.9.1.1':
                         dir_list.append(os.path.join(root, file))
 
     print(f'{str(len(dir_list))} files found in this folder, is that correct?')
 
-    keys = pd.read_csv(config.key, sep=None,
-                       engine='python', encoding='utf-8-sig')
-    if not keys['PID'].dtypes == str:
-        patient_id_length = keys['PID'].astype(str).map(len).max()
-        reformat_string = '{:0>' + str(patient_id_length) + '}'
-        leading_zeros = input(
-            f'Do you want to add leading zeros to numeric PatientID of length {str(patient_id_length)}? [Y/n]')
+    if config.key:
+        keys = pd.read_csv(config.key, sep=None,
+                        engine='python', encoding='utf-8-sig')
+        if keys['PID'].dtypes == int:
+            patient_id_length = keys['PID'].astype(str).map(len).max()
+            reformat_string = '{:0>' + str(patient_id_length) + '}'
+            leading_zeros = input(
+                f'Do you want to add leading zeros to numeric PatientID of length {str(patient_id_length)}? [Y/n]')
 
-        if leading_zeros in ["", "Y"]:
-            keys['PID'] = keys['PID'].astype(int).astype(
-                str).apply(reformat_string.format)
-        elif leading_zeros == "n":
-            keys['PID'] = keys['PID'].astype(int).astype(
-                str)
+            if leading_zeros in ["", "Y"]:
+                keys['PID'] = keys['PID'].astype(int).astype(
+                    str).apply(reformat_string.format)
+            elif leading_zeros == "n":
+                keys['PID'] = keys['PID'].astype(int).astype(
+                    str)
+            else:
+                raise AssertionError("Please respond with Y or n...")
         else:
-            raise AssertionError("Please respond with Y or n...")
-    keys['PseudoID'] = keys['PseudoID'].astype(str)
+            keys['PID'] = keys['PID'].astype(str)
+        keys['PseudoID'] = keys['PseudoID'].astype(str)
 
-    if not os.path.exists(os.path.join(config.in_folder, 'password.key')):
-        print('Generating new password...')
-        write_password(os.path.join(config.in_folder, 'password.key'))
+    if config.encrypted_folder:
+        if not os.path.exists(os.path.join(config.in_folder, 'password.key')):
+            print('Generating new password...')
+            write_password(os.path.join(config.in_folder, 'password.key'))
+        else:
+            print('Using current password...')
+
+        password = load_password(os.path.join(config.in_folder, 'password.key'))
+
+        print('Starting pseudonymisation and encryption...')
     else:
-        print('Using current password...')
-
-    password = load_password(os.path.join(config.in_folder, 'password.key'))
-
-    print('Starting pseudonymisation and encryption...')
+        print('Starting pseudonymisation...')
 
     for idx, path in tqdm(enumerate(dir_list)):
         if config.manufacturer == 'MUSE':
@@ -172,7 +178,7 @@ def run(config):
                 xml_root = remove_specific_xml_field(xml_root, field_path)
 
         elif config.manufacturer == 'DICOM' or config.manufacturer == 'DICOMDIR':
-            ds = dicom.read_file(path)
+            ds = dicom.dcmread(path)
 
             # Get required variables from DICOM file
             patient_id = str(ds.PatientID)
@@ -189,27 +195,32 @@ def run(config):
                 ds.PatientBirthDate = ''
 
         # Define new filename
-        if keys['PID'].isin([patient_id]).sum() > 0:
-            pseudo_id = keys.loc[keys['PID'] ==
-                                 patient_id, 'PseudoID'].values[0]
+        if config.key:
+            if keys['PID'].isin([patient_id]).sum() > 0:
+                pseudo_id = keys.loc[keys['PID'] ==
+                                    patient_id, 'PseudoID'].values[0]
+                
+                timestamp_hash = hashlib.sha256(
+                    timestamp.encode('utf-8')).hexdigest()[-10:]
+                file_out = str(pseudo_id) + '_' + timestamp_hash
+            else:
+                print(
+                    f'The XML/DCM file with name {path} has no associated RedCap ID, please check.')
+                continue
         else:
-            print(
-                f'The XML/DCM file with name {path} has no associated RedCap ID, please check.')
-            continue
-
-        timestamp_hash = hashlib.sha256(
-            timestamp.encode('utf-8')).hexdigest()[-10:]
-        file_out = str(pseudo_id) + '_' + timestamp_hash
+            file_out = os.path.basename(path).split('.')[0]
 
         # Save pseudonimized and encrypted files
         if config.manufacturer in ['MUSE', 'MORTARA']:
             xml_tree.write(os.path.join(config.out_folder, file_out + '.xml'))
-            encrypt(os.path.join(config.out_folder, file_out + '.xml'),
-                    os.path.join(config.encrypted_folder, file_out + '.enc'), password)
+            if config.encrypted_folder:
+                encrypt(os.path.join(config.out_folder, file_out + '.xml'),
+                        os.path.join(config.encrypted_folder, file_out + '.enc'), password)
         elif config.manufacturer in ['DICOM', 'DICOMDIR']:
             ds.save_as(os.path.join(config.out_folder, file_out + '.dcm'))
-            encrypt(os.path.join(config.out_folder, file_out + '.dcm'),
-                    os.path.join(config.encrypted_folder, file_out + '.enc'), password)
+            if config.encrypted_folder:
+                encrypt(os.path.join(config.out_folder, file_out + '.dcm'),
+                        os.path.join(config.encrypted_folder, file_out + '.enc'), password)
 
     print(f'Done, processed {str(idx+1)} files!')
 
@@ -220,13 +231,13 @@ if __name__ == "__main__":
     # Parser
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--in_folder', type=str, default="test_dir",
+    parser.add_argument('--in_folder', type=str,
                         help="Path to folder with xml or dicom waveform files")
-    parser.add_argument('--out_folder', type=str, default="out_test_dir",
+    parser.add_argument('--out_folder', type=str,
                         help="Folder name to put converted files in")
-    parser.add_argument('--encrypted_folder', type=str, default="encrypt_test_dir",
+    parser.add_argument('--encrypted_folder', type=str,
                         help="Folder name to put encrypted files in")
-    parser.add_argument('--key', type=str, default="key.csv",
+    parser.add_argument('--key', type=str,
                         help="CSV file with local PIDs (named 'PID') and pseudonyms (named 'PseudoID')")
     parser.add_argument('--manufacturer', type=str, default="MUSE",
                         help="Enter manufacturer, options: MUSE or MORTARA or DICOM or DICOMDIR")

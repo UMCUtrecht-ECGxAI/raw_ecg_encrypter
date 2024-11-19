@@ -18,7 +18,7 @@ Python script to automatically remove patient information from all sorts of raw 
     cd /home/user/Downloads/raw_ecg_encrypter
     ```
 
-5. Optional: test if your installation is working by running the following two commands:
+5. Optional: test if your installation is working by running the following command:
     ```
     pytest
     ```
@@ -29,9 +29,9 @@ Python script to automatically remove patient information from all sorts of raw 
         * Files are in the parent or subfolders and end with `.dcm` or `.DCM` or start with `1.2.840.113654.2.70.1`. As these type of files can both be a real waveform DICOM or an encapsulated PDF, we will check if the UID is 1.2.840.10008.5.1.4.1.1.9.1.1. For manufacturer select **DICOM**.
         * Files are in a DICOMDIR folder structure. For manufacturer select **DICOMDIR**.
 
-7. Create a CSV file, semicolon-delimited, with in one column named `PID` the patient IDs as used in the XML/DCM file and in one column named `PseudoID` the PseudoIDs (please see example files and folders in the repository).
+7. OPTIONAL: Create a CSV file, semicolon-delimited, with in one column named `PID` the patient IDs as used in the XML/DCM file and in one column named `PseudoID` the PseudoIDs (please see example files and folders in the repository). If not provided, the original filename will be used.
 
-8. Run the encrypter with the following command in the terminal or Anaconda Prompt (don't forget to replace `in_test_dir`, `out_test_dir`, `excrypt_test_dir` and `test_key.csv` with the correct full paths, like `C:\Users\Test\in_test_dir` etc). Please enter the correct manufacturerer too.
+8. Run the encrypter with the following command in the terminal or Anaconda Prompt (don't forget to replace `in_test_dir` and `out_test_dir` and optionally the `excrypt_test_dir` and `test_key.csv` with the correct full paths, like `C:\Users\Test\in_test_dir` etc). Please enter the correct manufacturerer too.
     ```
     python ecg_encrypter.py --in_folder in_test_dir_xml --out_folder out_test_dir --encrypted_folder encrypt_test_dir --key test_key.csv --manufacturer MUSE
     python ecg_encrypter.py --in_folder in_test_dir_dcm --out_folder out_test_dir --encrypted_folder encrypt_test_dir --key test_key.csv --manufacturer DICOM
